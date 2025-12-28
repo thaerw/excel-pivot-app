@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Pivot Table Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-table"></i> Excel Pivot Table Builder
+            </span>
+            <span class="navbar-text text-light">
+                <small>Free Online Tool</small>
+            </span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Upload Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card" id="uploadCard">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-upload"></i> Upload Excel File</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-zone" id="uploadZone">
+                            <i class="bi bi-file-earmark-excel display-1 text-success"></i>
+                            <p class="mt-3">Drag & drop your Excel file here or click to browse</p>
+                            <p class="text-muted small">Supported formats: .xlsx, .xls, .csv (Max 50MB)</p>
+                            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder2-open"></i> Browse Files
+                            </button>
+                        </div>
+                        <div id="fileInfo" class="mt-3" style="display: none;">
+                            <div class="alert alert-success d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <div>
+                                    <strong id="fileName"></strong> loaded successfully
+                                    <span class="badge bg-primary ms-2" id="rowCount"></span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger ms-auto" onclick="clearFile()">
+                                    <i class="bi bi-x-lg"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" style="display: none;">
+            <div class="row">
+                <!-- Available Columns -->
+                <div class="col-lg-3 col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-list-columns"></i> Available Columns</h6>
+                        </div>
+                        <div class="card-body">
+                            <input type="text" class="form-control mb-2" id="columnSearch" 
+                                   placeholder="Search columns...">
+                            <div id="columnsList" class="columns-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pivot Configuration -->
+                <div class="col-lg-5 col-md-8 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-grid-3x3"></i> Pivot Table Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filters -->
+                            <div class="config-section mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-funnel"></i> Filters
+                                    <span class="badge bg-secondary" id="filterCount">0</span>
+                                </label>
+                                <div class="drop-zone" id="filtersZone" data-type="filters">
+                                    <p class="placeholder-text">Drag columns here to filter data</p>
+                                </div>
+                                <div id="filterSelections" class="mt-2"></div>
+                            </div>
+
+                            <!-- Rows -->
+                            <div class="config-section mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-list-ol"></i> Rows
+                                    <span class="badge bg-secondary" id="rowsCount">0</span>
+                                </label>
+                                <div class="drop-zone" id="rowsZone" data-type="rows">
+                                    <p class="placeholder-text">Drag columns here for row labels</p>
+                                </div>
+                            </div>
+
+                            <!-- Columns -->
+                            <div class="config-section mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-layout-three-columns"></i> Columns
+                                    <span class="badge bg-secondary" id="columnsCount">0</span>
+                                </label>
+                                <div class="drop-zone" id="columnsZone" data-type="columns">
+                                    <p class="placeholder-text">Drag columns here for column labels</p>
+                                </div>
+                            </div>
+
+                            <!-- Values -->
+                            <div class="config-section mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-calculator"></i> Values
+                                    <span class="badge bg-secondary" id="valuesCount">0</span>
+                                </label>
+                                <div class="drop-zone" id="valuesZone" data-type="values">
+                                    <p class="placeholder-text">Drag numeric columns here for values</p>
+                                </div>
+                            </div>
+
+                            <!-- Aggregation Function -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Aggregation Function</label>
+                                    <select class="form-select" id="aggFunc">
+                                        <option value="sum">Sum</option>
+                                        <option value="mean">Average</option>
+                                        <option value="count">Count</option>
+                                        <option value="min">Minimum</option>
+                                        <option value="max">Maximum</option>
+                                        <option value="median">Median</option>
+                                        <option value="std">Std Deviation</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="showTotals">
+                                        <label class="form-check-label" for="showTotals">
+                                            Show Grand Totals
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4">
+                                <button class="btn btn-success btn-lg w-100" onclick="generatePivot()">
+                                    <i class="bi bi-play-fill"></i> Generate Pivot Table
+                                </button>
+                                <button class="btn btn-outline-secondary w-100 mt-2" onclick="resetConfiguration()">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reset Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column Details -->
+                <div class="col-lg-4 col-md-12 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Column Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="columnDetails">
+                                <p class="text-muted">Click on a column to see details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pivot Table Result -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="bi bi-table"></i> Pivot Table Result</h6>
+                            <div id="pivotActions" style="display: none;">
+                                <button class="btn btn-sm btn-light" onclick="exportToCSV()">
+                                    <i class="bi bi-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="pivotLoading" style="display: none;">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Generating pivot table...</p>
+                                </div>
+                            </div>
+                            <div id="pivotResult">
+                                <p class="text-muted text-center py-5">
+                                    <i class="bi bi-arrow-up-circle display-4"></i><br>
+                                    Configure your pivot table above and click "Generate Pivot Table"
+                                </p>
+                            </div>
+                            <div id="pivotSummary" class="mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Preview -->
+            <div class="row mt-4 mb-5">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="bi bi-eye"></i> Data Preview (First 10 rows)</h6>
+                            <button class="btn btn-sm btn-outline-light" onclick="togglePreview()">
+                                <i class="bi bi-chevron-down" id="previewToggleIcon"></i>
+                            </button>
+                        </div>
+                        <div class="card-body" id="previewBody">
+                            <div id="dataPreview" class="table-responsive"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div class="modal fade" id="filterModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter: <span id="filterColumnName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-2" id="filterSearch" 
+                           placeholder="Search values...">
+                    <div class="mb-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectAllFilters()">Select All</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllFilters()">Deselect All</button>
+                    </div>
+                    <div id="filterValues" class="filter-values-list"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyFilter()">Apply Filter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light py-3 mt-5">
+        <div class="container text-center">
+            <small class="text-muted">Excel Pivot Table Builder - Free Online Tool</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
